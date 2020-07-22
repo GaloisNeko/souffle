@@ -133,18 +133,29 @@ void AstTranslator::translateDirectives(std::map<std::string, std::string>& dire
         attributesTypes.push_back(type);
     }
 
+    // Prepare record fields information.
+    std::vector<std::string> attributesNames;
+
+    for (const auto* attribute : rel->getAttributes()) {
+        attributesNames.push_back(attribute->getName());
+    }
+
     // Casting due to json11.h type requirements.
     long long arity{static_cast<long long>(rel->getArity() - auxArityAnalysis->getArity(rel))};
     long long auxArity{static_cast<long long>(auxArityAnalysis->getArity(rel))};
-
-    const Json rec = getRecordsTypes();
 
     Json relJson = Json::object{{"arity", arity}, {"auxArity", auxArity},
             {"types", Json::array(attributesTypes.begin(), attributesTypes.end())}};
 
     Json types = Json::object{{name, relJson}, {"records", getRecordsTypes()}};
 
+    Json attJson = Json::object{{"arity", arity}, {"auxArity", auxArity},
+            {"attributes", Json::array(attributesNames.begin(), attributesNames.end())}};
+
+    Json attributes = Json::object{{name, attJson}, {"records", getRecordsNames()}};
+
     directives["types"] = types.dump();
+    directives["attributes"] = attributes.dump();
 }
 
 std::vector<std::map<std::string, std::string>> AstTranslator::getInputDirectives(
@@ -1823,6 +1834,33 @@ const Json AstTranslator::getRecordsTypes() {
 
     RamRecordTypes = Json(records);
     return RamRecordTypes;
+}
+
+const Json AstTranslator::getRecordsNames() {
+    if (!RamRecordNames.is_null()) {
+        return RamRecordNames;
+    }
+
+    std::vector<std::string> elementNames;
+    std::map<std::string, Json> records;
+
+    // Iterate over all record names in the program populating the records map.
+    for (auto* astType : program->getTypes()) {
+        if (isA<AstRecordType>(astType)) {
+            elementNames.clear();
+
+            for (const auto field : as<AstRecordType>(astType)->getFields()) {
+                elementNames.push_back(field->getName());
+            }
+            const size_t recordArity = elementNames.size();
+            Json recordInfo = Json::object{
+                    {"attributes", std::move(elementNames)}, {"arity", static_cast<long long>(recordArity)}};
+            records.emplace(astType->getQualifiedName().toString(), std::move(recordInfo));
+        }
+    }
+
+    RamRecordNames = Json(records);
+    return RamRecordNames;
 }
 
 std::unique_ptr<RamTranslationUnit> AstTranslator::translateUnit(AstTranslationUnit& tu) {

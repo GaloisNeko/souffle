@@ -35,7 +35,12 @@ protected:
     WriteStreamJSON(const std::map<std::string, std::string>& rwOperation, const SymbolTable& symbolTable,
             const RecordTable& recordTable)
             : WriteStream(rwOperation, symbolTable, recordTable),
-              beautify(getOr(rwOperation, "beautify", "false") == "true"){};
+              beautify(getOr(rwOperation, "beautify", "false") == "true"){
+        //std::cout << Json(types).dump() << "\n";; // BUG: REMOVE
+            for (auto r : rwOperation) {
+                std::cout << r.first << " " << r.second << "\n";
+            }
+    };
 
     const bool beautify;
 

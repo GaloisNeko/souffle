@@ -88,6 +88,9 @@ private:
     /** Record types information - used in Ram for I/O. */
     Json RamRecordTypes;
 
+    /** Record names information - used in Ram for I/O. */
+    Json RamRecordNames;
+
     /** Symbol Table **/
     SymbolTable symbolTable;
 
@@ -392,6 +395,12 @@ private:
      * If they don't exists - create them.
      */
     const Json getRecordsTypes();
+
+    /**
+     * Get ram records names.
+     * If they don't exists - create them.
+     */
+    const Json getRecordsNames();
 
     /** Return a symbol table **/
     SymbolTable& getSymbolTable() {
